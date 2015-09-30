@@ -9,6 +9,8 @@
 .include "routines/screen.h"
 .include "routines/metasprite.h"
 
+.include "gamegrid.h"
+
 
 ;; Initialisation Routine
 ROUTINE Main
@@ -17,8 +19,6 @@ ROUTINE Main
 .A8
 .I16
 
-	; ::TODO Setup Sound Engine::
-
 	LDA	#NMITIMEN_VBLANK_FLAG | NMITIMEN_AUTOJOY_FLAG
 	STA	NMITIMEN
 
@@ -26,6 +26,8 @@ ROUTINE Main
 	STXY	Random__Seed
 
 	MetaSprite_Init
+
+	JSR	GameGrid__Init
 
 	LDA	#15
 	STA	INIDISP

@@ -9,10 +9,18 @@
 
 
 .enum RESOURCES_VRAM
+	CARDS_4BPP
 .endenum
 
 .enum RESOURCES_PALETTES
+	CARDS
 .endenum
+
+IMPORT_MODULE Resources
+
+	INCLUDE_BINARY	CardsTileMap
+
+ENDMODULE
 
 .endif ; __RESOURCES_H_
 

@@ -8,6 +8,7 @@
 .include "routines/controller.h"
 .include "routines/metasprite.h"
 
+.include "gamegrid.h"
 
 
 ;; Blank Handlers
@@ -37,6 +38,8 @@ _VBlankBank:
 .I16
 	; Reset NMI Flag.
 	LDA	RDNMI
+
+	JSR	GameGrid__VBlank
 
 	MetaSprite_VBlank
 	Screen_VBlank
