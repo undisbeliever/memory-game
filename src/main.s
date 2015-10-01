@@ -9,7 +9,7 @@
 .include "routines/screen.h"
 .include "routines/metasprite.h"
 
-.include "gamegrid.h"
+.include "gameloop.h"
 
 
 ;; Initialisation Routine
@@ -27,34 +27,9 @@ ROUTINE Main
 
 	MetaSprite_Init
 
-	JSR	GameGrid__Init
-
-	LDA	#15
-	STA	INIDISP
-
-	JSR	WaitForButtonPress
-
 	REPEAT
+		JSR	GameLoop__PlayGame
 	FOREVER
-
-
-.A8
-.I16
-ROUTINE WaitForButtonPress
-	REPEAT
-		JSR	Screen__WaitFrame
-		JSR	Random__AddJoypadEntropy
-
-		REP	#$30
-.A16
-		LDA	Controller__pressed
-		AND	#JOY_BUTTONS | JOY_START
-
-		SEP	#$30
-.A8
-	UNTIL_NE
-
-	RTS
 
 
 .segment "COPYRIGHT"

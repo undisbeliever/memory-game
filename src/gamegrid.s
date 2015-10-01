@@ -100,13 +100,6 @@ ROUTINE Init
 		DEY
 	UNTIL_ZERO
 
-	PEA	$807E
-	PLB
-
-	JSR	DrawAllCards
-
-	PLB
-
 	RTS
 
 
@@ -229,6 +222,7 @@ tmp_mapIndex	= tmp2
 	STZ	updateCardMapOnZero
 
 	RTS
+
 
 
 .segment "BANK1"
