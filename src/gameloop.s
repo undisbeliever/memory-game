@@ -26,6 +26,8 @@ MODULE GameLoop
 	PRESS_START	=  2
 	OPEN_DOORS	=  4
 	SHOW_CARDS	=  6
+	CLOSE_DOORS	=  8
+	SELECT_FIRST	= 10
 .endenum
 
 .segment "WRAM7E"
@@ -54,7 +56,7 @@ MODULE GameLoop
 
 
 	;; Counter for the animations
-	BYTE	animationCounter
+	WORD	animationCounter
 
 	;; the state of all the doors
 	doorValue = firstDoorValue
@@ -97,6 +99,8 @@ StateTable:
 	.addr	State_PressStart
 	.addr	State_OpenDoors
 	.addr	State_ShowCards
+	.addr	State_CloseDoors
+	.addr	State_SelectFirst
 
 .code
 
@@ -178,14 +182,98 @@ ROUTINE EnterState_ShowCards
 	LDX	#GameState::SHOW_CARDS
 	STX	state
 
+	LDA	STAT78
+	IF_BIT	#STAT78_PAL_MASK
+		LDY	#SHOW_CARDS_SECONDS * 50
+	ELSE
+		LDY	#SHOW_CARDS_SECONDS * 60
+	ENDIF
+
+	STY	animationCounter
+
 	RTS
 
 
+; DB = $7E
 .A8
 .I16
 ROUTINE State_ShowCards
+	; skip if the user presses a button
+	JOY_SKIP = JOY_BUTTONS | JOY_START
+
+	LDA	Controller__pressed
+	AND	#.lobyte(JOY_SKIP)
+	BNE	EnterState_CloseDoors
+
+	LDA	Controller__pressed + 1
+	AND	#.hibyte(JOY_SKIP)
+	BNE	EnterState_CloseDoors
+
+
+	LDY	animationCounter
+	DEY
+	STY	animationCounter
+
+	BEQ	EnterState_CloseDoors
+
 	RTS
 
+
+
+; DB = $7E
+.A8
+.I16
+ROUTINE EnterState_CloseDoors
+	LDX	#GameState::CLOSE_DOORS
+	STX	state
+
+	LDA	#N_DOOR_FRAMES
+	STA	doorValue
+
+	LDA	#DOOR_ANIMATION_DELAY
+	STA	animationCounter
+
+	RTS
+
+
+
+; DB = $7E
+.A8
+.I16
+ROUTINE State_CloseDoors
+
+	DEC	animationCounter		
+	IF_ZERO
+		LDA	doorValue
+		JSR	GameGrid__DrawAllDoors
+
+		DEC	doorValue
+		BMI	EnterState_SelectFirst
+
+		LDA	#DOOR_ANIMATION_DELAY
+		STA	animationCounter
+	ENDIF
+
+	RTS
+
+
+
+; DB = $7E
+.A8
+.I16
+ROUTINE EnterState_SelectFirst
+	LDX	#GameState::SELECT_FIRST
+	STX	state
+
+	RTS
+
+
+; DB = $7E
+.A8
+.I16
+ROUTINE State_SelectFirst
+	; ::TODO::
+	RTS
 
 
 ;; Initialize the system
