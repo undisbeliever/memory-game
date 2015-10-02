@@ -20,14 +20,15 @@ MODULE GameGrid
 CARD_TILEMAP_WIDTH	= 3
 CARD_TILEMAP_HEIGHT	= 15
 
-
 .segment "SHADOW"
-	WORD	updateCardMapOnZero
+	BYTE	updateCardMapOnZero
+	BYTE	updateDoorMapOnZero
 
 .segment "WRAM7E"
 
 Init_MemClear:
 	WORD	cardTileMap, 32 * 24
+	WORD	doorTileMap, 32 * 24
 
 	WORD	grid, GAMEGRID_WIDTH * GAMEGRID_HEIGHT
 Init_MemClear_End:
@@ -35,6 +36,7 @@ Init_MemClear_End:
 	WORD	tmp1
 	WORD	tmp2
 	WORD	tmp3
+	WORD	tmp4
 
 .code
 
@@ -52,7 +54,7 @@ ROUTINE Init
 
 	Screen_SetVramBaseAndSize PPU_MEMORY
 
-	LDA	#TM_BG1
+	LDA	#TM_BG1 | TM_BG2
 	STA	TM
 
 	LDA	#.lobyte(-CARD_X_OFFSET_PX)
@@ -65,21 +67,44 @@ ROUTINE Init
 	LDA	#.hibyte(-CARD_Y_OFFSET_PX)
 	STA	BG1VOFS
 
+	LDA	#.lobyte(-CARD_X_OFFSET_PX)
+	STA	BG2HOFS
+	LDA	#.hibyte(-CARD_X_OFFSET_PX)
+	STA	BG2HOFS
+
+	LDA	#.lobyte(-CARD_Y_OFFSET_PX)
+	STA	BG2VOFS
+	LDA	#.hibyte(-CARD_Y_OFFSET_PX)
+	STA	BG2VOFS
+
+
 	STZ	CGADD
 
 	LDA	#RESOURCES_PALETTES::CARDS
 	JSR	ResourceLoader__LoadPalette_8A
 
+	LDA	#DOOR_PALETTE * 16
+	STA	CGADD
 
-	LDX	#PPU_MEMORY_BG1_TILES
+	LDA	#RESOURCES_PALETTES::DOOR
+	JSR	ResourceLoader__LoadPalette_8A
+
+	LDX	#PPU_MEMORY_BG2_TILES
 	STX	VMADD
 
 	LDA	#RESOURCES_VRAM::CARDS_4BPP
 	JSR	ResourceLoader__LoadVram_8A
 
+	LDX	#PPU_MEMORY_BG1_TILES
+	STX	VMADD
+
+	LDA	#RESOURCES_VRAM::DOOR_4BPP
+	JSR	ResourceLoader__LoadVram_8A
+
 	MemClear	Init_MemClear
 
 	STZ	updateCardMapOnZero
+	STZ	updateDoorMapOnZero
 
 	; Setup cards
 
@@ -109,10 +134,18 @@ ROUTINE Init
 ROUTINE VBlank
 	LDA	updateCardMapOnZero
 	IF_ZERO
-		TransferToVramLocation	cardTileMap, PPU_MEMORY_BG1_MAP
+		TransferToVramLocation	cardTileMap, PPU_MEMORY_BG2_MAP
 
 		; A = non-zero
 		STA	updateCardMapOnZero
+	ENDIF
+
+	LDA	updateDoorMapOnZero
+	IF_ZERO
+		TransferToVramLocation	doorTileMap, PPU_MEMORY_BG1_MAP
+
+		; A = non-zero
+		STA	updateDoorMapOnZero
 	ENDIF
 
 	RTS
@@ -171,13 +204,14 @@ tmp_gridIndex	= tmp1
 tmp_mapIndex	= tmp2
 
 	CMP	#GAMEGRID_WIDTH * GAMEGRID_HEIGHT
-	IF_LT
-		ASL
-		STA	tmp_gridIndex
-		STZ	tmp_gridIndex + 1
-	ELSE
-		LDY	#GAMEGRID_WIDTH * GAMEGRID_HEIGHT * 2
+	IF_GE
+		LDA	#GAMEGRID_WIDTH * GAMEGRID_HEIGHT - 1
 	ENDIF
+
+	ASL
+	STA	tmp_gridIndex
+	STZ	tmp_gridIndex + 1
+
 
 	; x = tmp_gridIndex / (GAMEGRID_WIDTH * 2)
 	; y = tmp_gridIndex % (GAMEGRID_WIDTH * 2)
@@ -225,6 +259,110 @@ tmp_mapIndex	= tmp2
 
 
 
+; A = door value
+; DB = $7E
+.A8
+.I16
+ROUTINE DrawAllDoors
+tmp_doorValue	= tmp3
+
+	STA	tmp_doorValue
+
+	LDX	#GAMEGRID_WIDTH * GAMEGRID_HEIGHT - 1
+
+	REPEAT
+		PHX
+		LDA	tmp_doorValue
+		JSR	DrawDoor
+
+		PLX
+		DEX
+	UNTIL_MINUS
+
+	RTS
+
+
+
+; A = door value
+; X = door index
+; DB = $7E
+.A8
+.I16
+ROUTINE DrawDoor
+
+;tmp_gridIndex	= tmp1
+;tmp_mapIndex	= tmp2
+;tmp_doorValue	= tmp3
+tmp_doorId	= tmp4
+
+	CMP	#N_DOOR_FRAMES
+	IF_GE
+		LDA	#N_DOOR_FRAMES - 1
+	ENDIF
+	STA	tmp_doorId
+
+
+	TXA
+	CMP	#GAMEGRID_WIDTH * GAMEGRID_HEIGHT
+	IF_GE
+		LDA	#GAMEGRID_WIDTH * GAMEGRID_HEIGHT - 1
+	ENDIF
+
+	ASL
+	STA	tmp_gridIndex
+	STZ	tmp_gridIndex + 1
+
+
+	; x = tmp_gridIndex / (GAMEGRID_WIDTH * 2)
+	; y = tmp_gridIndex % (GAMEGRID_WIDTH * 2)
+	; tmp_mapIndex = y * CARD_TILE_HEIGHT * 64 + x * CARD_TILE_HEIGHT
+
+	.assert CARD_TILE_WIDTH = 4, error, "bad code"
+	.assert CARD_TILE_HEIGHT = 4, error, "bad code"
+
+	LDY	tmp_gridIndex
+	LDA	#GAMEGRID_WIDTH * 2
+	JSR	Math__Divide_U16Y_U8A_DB
+
+	REP	#$30
+.A16
+	TXA
+	ASL
+	ASL
+	STA	tmp_mapIndex
+
+	TYA
+	XBA
+	ADD	tmp_mapIndex
+	TAY
+
+
+	LDA	tmp_doorId
+	AND	#$00FF	
+	ASL
+	ASL
+	ASL
+	ASL
+	ASL	; * 32
+	TAX
+
+	; X = gridIndex
+	; Y = tilemap location
+
+	.repeat	CARD_TILE_HEIGHT, dy
+		.repeat	CARD_TILE_WIDTH, dx
+			LDA	f:DoorTileMapData + (dy * CARD_TILE_HEIGHT + dx) * 2, X
+			STA	a:doorTileMap + (dy * 32 + dx) * 2, Y
+		.endrepeat
+	.endrepeat
+
+	SEP	#$20
+.A8
+	STZ	updateDoorMapOnZero
+
+	RTS
+
+
 .segment "BANK1"
 
 LABEL Tile_Locations
@@ -232,6 +370,49 @@ LABEL Tile_Locations
 		.repeat	CARD_TILEMAP_WIDTH, cx
 			.word	(cy * CARD_TILE_HEIGHT * 32 + cx * CARD_TILE_WIDTH) * 2
 		.endrepeat
+	.endrepeat
+
+_DOOR_TILE_LEFT_FULL	=  1
+_DOOR_TILE_LEFT_EMPTY	=  6
+_DOOR_TILE_RIGHT_FULL	=  7
+_DOOR_TILE_RIGHT_EMPTY	= 15
+
+DOOR_PALETTE		= 7
+
+.macro _Generate_DoorTileMapLineBlock left, right
+	.local d
+	d = (DOOR_PALETTE << TILEMAP_PALETTE_SHIFT) | TILEMAP_ORDER_FLAG
+
+	.word	left  | d
+	.word	right | d
+	.word	right | d | TILEMAP_H_FLIP_FLAG
+	.word	left  | d | TILEMAP_H_FLIP_FLAG
+	.word	left  + 16 | d
+	.word	right + 16 | d
+	.word	right + 16 | d | TILEMAP_H_FLIP_FLAG
+	.word	left  + 16 | d | TILEMAP_H_FLIP_FLAG
+
+	.word	left  + 16 | d | TILEMAP_V_FLIP_FLAG
+	.word	right + 16 | d | TILEMAP_V_FLIP_FLAG
+	.word	right + 16 | d | TILEMAP_H_FLIP_FLAG | TILEMAP_V_FLIP_FLAG
+	.word	left  + 16 | d | TILEMAP_H_FLIP_FLAG | TILEMAP_V_FLIP_FLAG
+	.word	left  | d | TILEMAP_V_FLIP_FLAG
+	.word	right | d | TILEMAP_V_FLIP_FLAG
+	.word	right | d | TILEMAP_H_FLIP_FLAG | TILEMAP_V_FLIP_FLAG
+	.word	left  | d | TILEMAP_H_FLIP_FLAG | TILEMAP_V_FLIP_FLAG
+.endmacro
+
+.macro	_Generate_DoorTileMapLine value
+	.if value < 8
+		_Generate_DoorTileMapLineBlock _DOOR_TILE_LEFT_FULL, _DOOR_TILE_RIGHT_FULL + value
+	.else
+		_Generate_DoorTileMapLineBlock _DOOR_TILE_LEFT_FULL + value - 7, _DOOR_TILE_RIGHT_EMPTY
+	.endif
+.endmacro
+
+LABEL	DoorTileMapData
+	.repeat N_DOOR_FRAMES, i
+		_Generate_DoorTileMapLine i
 	.endrepeat
 
 ENDMODULE

@@ -15,12 +15,17 @@
 .include "resources.h"
 .include "vram.h"
 
+CONFIG DOOR_ANIMATION_DELAY,	3
+CONFIG SHOW_CARDS_SECONDS,	5
+
+
 MODULE GameLoop
 
 .enum GameState
 	END		=  0
 	PRESS_START	=  2
 	OPEN_DOORS	=  4
+	SHOW_CARDS	=  6
 .endenum
 
 .segment "WRAM7E"
@@ -29,15 +34,30 @@ MODULE GameLoop
 	ADDR	state
 
 	;; position of cursor
-	BYTE	cursorPos
+	WORD	cursorPos
 
 	;; Currently selected cursor
-	BYTE	currentSelectedPos
+	WORD	firstSelectedPos
+
+	;; the door value of the first selected door
+	BYTE	firstDoorValue
+
+	;; Currently selected cursor
+	WORD	secondSelectedPos
+
+	;; the door value of the second selected door
+	BYTE	secondDoorValue
 
 	;; Number of correct guesses
 	;; when == N_UNIQUE_TILES the player wins
 	BYTE	nCorrectGuesses
 
+
+	;; Counter for the animations
+	BYTE	animationCounter
+
+	;; the state of all the doors
+	doorValue = firstDoorValue
 .code
 
 
@@ -76,6 +96,7 @@ StateTable:
 	.addr	DoNothing
 	.addr	State_PressStart
 	.addr	State_OpenDoors
+	.addr	State_ShowCards
 
 .code
 
@@ -98,6 +119,7 @@ ROUTINE	State_PressStart
 
 
 
+
 ; DB = $7E
 .A8
 .I16
@@ -109,6 +131,21 @@ ROUTINE EnterState_OpenDoors
 
 	JSR	GameGrid__DrawAllCards
 
+	LDA	#0
+	JSR	GameGrid__DrawAllDoors
+
+	STZ	nCorrectGuesses
+
+	LDX	#0
+	STX	cursorPos
+	STX	firstSelectedPos
+	STX	secondSelectedPos
+
+	LDA	#DOOR_ANIMATION_DELAY
+	STA	animationCounter
+
+	STZ	doorValue
+
 	RTS
 
 
@@ -116,8 +153,39 @@ ROUTINE EnterState_OpenDoors
 .A8
 .I16
 ROUTINE State_OpenDoors
-	; ::TODO code::
+
+	DEC	animationCounter		
+	IF_ZERO
+		INC	doorValue
+		LDA	doorValue
+		CMP	#N_DOOR_FRAMES + 1
+		BGE	EnterState_ShowCards
+
+		JSR	GameGrid__DrawAllDoors
+
+		LDA	#DOOR_ANIMATION_DELAY
+		STA	animationCounter
+	ENDIF
+
 	RTS
+
+
+
+; DB = $7E
+.A8
+.I16
+ROUTINE EnterState_ShowCards
+	LDX	#GameState::SHOW_CARDS
+	STX	state
+
+	RTS
+
+
+.A8
+.I16
+ROUTINE State_ShowCards
+	RTS
+
 
 
 ;; Initialize the system

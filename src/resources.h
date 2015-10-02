@@ -10,10 +10,12 @@
 
 .enum RESOURCES_VRAM
 	CARDS_4BPP
+	DOOR_4BPP
 .endenum
 
 .enum RESOURCES_PALETTES
 	CARDS
+	DOOR
 .endenum
 
 IMPORT_MODULE Resources
