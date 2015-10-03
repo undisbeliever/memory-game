@@ -13,10 +13,12 @@
 
 .include "gamegrid.h"
 .include "resources.h"
+.include "sprites.h"
 .include "vram.h"
 
-CONFIG DOOR_ANIMATION_DELAY,	3
-CONFIG SHOW_CARDS_SECONDS,	5
+CONFIG OPEN_DOOR_ANIMATION_DELAY,	3
+CONFIG CLOSE_DOOR_ANIMATION_DELAY,	1
+CONFIG SHOW_CARDS_SECONDS,		5
 
 
 MODULE GameLoop
@@ -78,6 +80,8 @@ ROUTINE PlayGame
 
 	PLB		; $7E
 
+	JSR	Sprites__DrawPressStartInCenter
+
 	LDX	#GameState::PRESS_START
 	STX	state
 
@@ -133,6 +137,8 @@ ROUTINE EnterState_OpenDoors
 
 	; ::TODO randomize cards
 
+	JSR	Sprites__Clear
+
 	JSR	GameGrid__DrawAllCards
 
 	LDA	#0
@@ -145,7 +151,7 @@ ROUTINE EnterState_OpenDoors
 	STX	firstSelectedPos
 	STX	secondSelectedPos
 
-	LDA	#DOOR_ANIMATION_DELAY
+	LDA	#OPEN_DOOR_ANIMATION_DELAY
 	STA	animationCounter
 
 	STZ	doorValue
@@ -167,7 +173,7 @@ ROUTINE State_OpenDoors
 
 		JSR	GameGrid__DrawAllDoors
 
-		LDA	#DOOR_ANIMATION_DELAY
+		LDA	#OPEN_DOOR_ANIMATION_DELAY
 		STA	animationCounter
 	ENDIF
 
@@ -230,7 +236,7 @@ ROUTINE EnterState_CloseDoors
 	LDA	#N_DOOR_FRAMES
 	STA	doorValue
 
-	LDA	#DOOR_ANIMATION_DELAY
+	LDA	#CLOSE_DOOR_ANIMATION_DELAY
 	STA	animationCounter
 
 	RTS
@@ -250,7 +256,7 @@ ROUTINE State_CloseDoors
 		DEC	doorValue
 		BMI	EnterState_SelectFirst
 
-		LDA	#DOOR_ANIMATION_DELAY
+		LDA	#CLOSE_DOOR_ANIMATION_DELAY
 		STA	animationCounter
 	ENDIF
 
@@ -273,6 +279,10 @@ ROUTINE EnterState_SelectFirst
 .I16
 ROUTINE State_SelectFirst
 	; ::TODO::
+
+	LDA	cursorPos
+	JSR	Sprites__DrawCursor
+
 	RTS
 
 
@@ -282,6 +292,7 @@ ROUTINE State_SelectFirst
 .I16
 ROUTINE Init
 	JSR	GameGrid__Init
+	JSR	Sprites__Init
 
 	JSR	Screen__WaitFrame
 

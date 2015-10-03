@@ -9,6 +9,7 @@
 .include "routines/metasprite.h"
 
 .include "gamegrid.h"
+.include "sprites.h"
 
 
 ;; Blank Handlers
@@ -40,6 +41,7 @@ _VBlankBank:
 	LDA	RDNMI
 
 	JSR	GameGrid__VBlank
+	JSR	Sprites__VBlank
 
 	MetaSprite_VBlank
 	Screen_VBlank
