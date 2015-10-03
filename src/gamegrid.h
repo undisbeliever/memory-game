@@ -55,6 +55,16 @@ IMPORT_MODULE GameGrid
 	;;	  X = card index
 	ROUTINE	DrawDoor
 
+	;; Checks to see if the card is already open
+	;; REQUIRES: 8 bit A, 16 bit Index, DB = $7E
+	;; INPUT: A = card Index
+	;; RETURN: carry set if card is unmatched
+	ROUTINE IsCardUnOpened
+
+	;; Marks a card as opened
+	;; REQUIRES: 8 bit A, 16 bit Index, DB = $7E
+	;; INPUT: A = card Index
+	ROUTINE MarkCardCardOpened
 ENDMODULE
 
 .endif ; __GAMEGRID_H_

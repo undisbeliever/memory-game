@@ -289,9 +289,11 @@ ROUTINE State_SelectFirst
 	LDA	Controller__pressed
 	ORA	Controller__pressed + 1
 	IF_BIT	#JOYL_A | JOYL_X	; also the same as B and Y
-		;; ::TODO check if already opened::
 
-		BRA	EnterState_SelectSecond
+		; check if card is already opened
+		LDA	cursorPos
+		JSR	GameGrid__IsCardUnOpened
+		BCS	EnterState_SelectSecond
 	ENDIF
 
 	RTS
@@ -306,6 +308,7 @@ ROUTINE EnterState_SelectSecond
 
 	LDA	cursorPos
 	STA	firstSelectedPos
+	JSR	GameGrid__MarkCardCardOpened
 
 	LDA	#1
 	STA	animationCounter
@@ -342,9 +345,9 @@ ROUTINE State_SelectSecond
 	LDA	Controller__pressed
 	ORA	Controller__pressed + 1
 	IF_BIT	#JOYL_A | JOYL_X	; also the same as B and Y
-		;; ::TODO check if already opened::
-
-		BRA	EnterState_WaitForDoors
+		LDA	cursorPos
+		JSR	GameGrid__IsCardUnOpened
+		BCS	EnterState_WaitForDoors
 	ENDIF
 
 	RTS
@@ -359,6 +362,7 @@ ROUTINE EnterState_WaitForDoors
 
 	LDA	cursorPos
 	STA	secondSelectedPos
+	JSR	GameGrid__MarkCardCardOpened
 
 	STZ	secondDoorValue
 

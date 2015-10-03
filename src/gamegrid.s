@@ -31,6 +31,9 @@ Init_MemClear:
 	WORD	doorTileMap, 32 * 24
 
 	WORD	grid, GAMEGRID_WIDTH * GAMEGRID_HEIGHT
+
+	;; If byte is non-zero then the card has been opened
+	BYTE	gridCardOpened, GAMEGRID_WIDTH * GAMEGRID_HEIGHT
 Init_MemClear_End:
 
 	WORD	tmp1
@@ -361,6 +364,54 @@ tmp_doorId	= tmp4
 	STZ	updateDoorMapOnZero
 
 	RTS
+
+
+
+; A = card id
+; Return c set if card is unopened
+.A8
+.I16
+ROUTINE IsCardUnOpened
+	SEP	#$30
+.I8
+	CMP	#GAMEGRID_WIDTH * GAMEGRID_HEIGHT
+	IF_GE
+		CLC
+		BRA	_IsCardUnOpened_Return
+	ENDIF
+
+	TAX
+	LDA	gridCardOpened, X
+	IF_ZERO
+		SEC
+	ELSE
+		CLC
+	ENDIF
+
+_IsCardUnOpened_Return:
+	REP	#$10
+.I16
+	RTS
+
+
+
+; A = card id
+.A8
+.I16
+ROUTINE MarkCardCardOpened
+	CMP	#GAMEGRID_WIDTH * GAMEGRID_HEIGHT
+	IF_LT
+		SEP	#$30
+.I8
+		TAX
+		LDA	#$FF
+		STA	gridCardOpened, X
+
+		REP	#$10
+	ENDIF
+.I16
+	RTS
+
 
 
 .segment "BANK1"
