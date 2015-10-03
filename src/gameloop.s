@@ -151,12 +151,22 @@ ROUTINE EnterState_OpenAllDoors
 	LDX	#GameState::OPEN_ALL_DOORS
 	STX	state
 
+	PEA	$7E80
+	PLB		; $80
+	JSR	Screen__FadeOut
+	PLB		; $7E
+
 	JSR	Sprites__Clear
 
 	JSR	GameGrid__DrawAllCards
 
 	LDA	#0
 	JSR	GameGrid__DrawAllDoors
+
+	PEA	$7E80
+	PLB		; $80
+	JSR	Screen__FadeIn
+	PLB		; $7E
 
 	STZ	nCorrectGuesses
 
