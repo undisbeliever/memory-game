@@ -65,6 +65,13 @@ IMPORT_MODULE GameGrid
 	;; REQUIRES: 8 bit A, 16 bit Index, DB = $7E
 	;; INPUT: A = card Index
 	ROUTINE MarkCardCardOpened
+
+	;; Checks to see if the two cards are equal
+	;; REQUIRES: 8 bit A, 16 bit Index, DB = $7E
+	;; INPUT: X = card 1 Index
+	;;	  Y = card 2 index
+	;; RETURN: carry set if cards are equal
+	ROUTINE AreCardsAMatch
 ENDMODULE
 
 .endif ; __GAMEGRID_H_

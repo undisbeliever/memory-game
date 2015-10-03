@@ -414,11 +414,34 @@ ROUTINE State_WaitForDoors
 .A8
 .I16
 ROUTINE CheckMatch
-	; ::TODO code::
-	REPEAT
-	FOREVER
+	LDX	firstSelectedPos
+	LDY	secondSelectedPos
+	JSR	GameGrid__AreCardsAMatch
 
+	IF_C_CLEAR
+		; not a match
+		; Player Looses
+		JSR	Sprites__DrawGameOverMessage
 
+		LDX	#GameState::PRESS_START
+		STX	state
+	ELSE
+		INC	nCorrectGuesses
+		LDA	nCorrectGuesses
+
+		CMP	#N_UNIQUE_TILES
+		IF_EQ
+			; Player Wins
+			JSR	Sprites__DrawYouWinMessage
+
+			LDX	#GameState::PRESS_START
+			STX	state
+		ELSE
+			JMP	EnterState_SelectFirst
+		ENDIF
+	ENDIF
+
+	RTS
 
 ;; move the cursor depending on the controller
 .A8

@@ -27,9 +27,7 @@ ROUTINE Main
 
 	MetaSprite_Init
 
-	REPEAT
-		JSR	GameLoop__PlayGame
-	FOREVER
+	JMP	GameLoop__PlayGame
 
 
 .segment "COPYRIGHT"

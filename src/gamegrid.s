@@ -375,20 +375,17 @@ ROUTINE IsCardUnOpened
 	SEP	#$30
 .I8
 	CMP	#GAMEGRID_WIDTH * GAMEGRID_HEIGHT
-	IF_GE
-		CLC
-		BRA	_IsCardUnOpened_Return
-	ENDIF
+	BGE	_IsCardUnOpened_ReturnFalse
 
 	TAX
 	LDA	gridCardOpened, X
 	IF_ZERO
 		SEC
 	ELSE
+_IsCardUnOpened_ReturnFalse:
 		CLC
 	ENDIF
 
-_IsCardUnOpened_Return:
 	REP	#$10
 .I16
 	RTS
@@ -409,6 +406,49 @@ ROUTINE MarkCardCardOpened
 
 		REP	#$10
 	ENDIF
+.I16
+	RTS
+
+
+; DB = $7E
+; X = card1 id
+; Y = card2 id
+; OUT: carry set if both cards are equal
+.A8
+.I16
+ROUTINE AreCardsAMatch
+	SEP	#$30
+.I8
+	CPX	#GAMEGRID_WIDTH * GAMEGRID_HEIGHT
+	BGE	_AreCardsAMatch_ReturnFalse
+
+	CPY	#GAMEGRID_WIDTH * GAMEGRID_HEIGHT
+	BGE	_AreCardsAMatch_ReturnFalse
+
+	; card indexes cannot be equal
+	STX	tmp1
+	CPY	tmp1
+	BEQ	_AreCardsAMatch_ReturnFalse
+
+	TXA
+	ASL
+	TAX
+
+	TYA
+	ASL
+	TAY
+
+	LDA	grid, X
+	CMP	grid, Y
+
+	IF_EQ
+		SEC
+	ELSE
+_AreCardsAMatch_ReturnFalse:
+		CLC
+	ENDIF
+
+	REP	#$10
 .I16
 	RTS
 
