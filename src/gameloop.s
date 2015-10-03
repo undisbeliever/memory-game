@@ -30,6 +30,8 @@ MODULE GameLoop
 	SHOW_CARDS	=  6
 	CLOSE_DOORS	=  8
 	SELECT_FIRST	= 10
+	SELECT_SECOND	= 12
+	WAIT_FOR_DOORS	= 14
 .endenum
 
 .segment "WRAM7E"
@@ -86,6 +88,8 @@ ROUTINE PlayGame
 	STX	state
 
 	REPEAT
+		JSR	Controller__UpdateRepeatingDPad
+
 		JSR	(.loword(StateTable), X)
 		JSR	Screen__WaitFrame
 
@@ -105,6 +109,8 @@ StateTable:
 	.addr	State_ShowCards
 	.addr	State_CloseDoors
 	.addr	State_SelectFirst
+	.addr	State_SelectSecond
+	.addr	State_WaitForDoors
 
 .code
 
@@ -164,7 +170,7 @@ ROUTINE EnterState_OpenDoors
 .I16
 ROUTINE State_OpenDoors
 
-	DEC	animationCounter		
+	DEC	animationCounter
 	IF_ZERO
 		INC	doorValue
 		LDA	doorValue
@@ -236,7 +242,7 @@ ROUTINE EnterState_CloseDoors
 	LDA	#N_DOOR_FRAMES
 	STA	doorValue
 
-	LDA	#CLOSE_DOOR_ANIMATION_DELAY
+	LDA	#1
 	STA	animationCounter
 
 	RTS
@@ -278,12 +284,183 @@ ROUTINE EnterState_SelectFirst
 .A8
 .I16
 ROUTINE State_SelectFirst
-	; ::TODO::
+	JSR	HandleCursor
 
-	LDA	cursorPos
-	JSR	Sprites__DrawCursor
+	LDA	Controller__pressed
+	ORA	Controller__pressed + 1
+	IF_BIT	#JOYL_A | JOYL_X	; also the same as B and Y
+		;; ::TODO check if already opened::
+
+		BRA	EnterState_SelectSecond
+	ENDIF
 
 	RTS
+
+
+; DB = $7E
+.A8
+.I16
+ROUTINE EnterState_SelectSecond
+	LDX	#GameState::SELECT_SECOND
+	STX	state
+
+	LDA	cursorPos
+	STA	firstSelectedPos
+
+	LDA	#1
+	STA	animationCounter
+
+	STZ	firstDoorValue
+
+	RTS
+
+
+; DB = $7E
+.A8
+.I16
+ROUTINE State_SelectSecond
+
+	; Animate the opening of the door in the background
+	LDA	firstDoorValue
+	CMP	#N_DOOR_FRAMES
+	IF_LT
+		DEC	animationCounter
+		IF_ZERO
+			INC	firstDoorValue
+			LDA	firstDoorValue
+
+			LDX	firstSelectedPos
+			JSR	GameGrid__DrawDoor
+
+			LDA	#OPEN_DOOR_ANIMATION_DELAY
+			STA	animationCounter
+		ENDIF
+	ENDIF
+
+	JSR	HandleCursor
+
+	LDA	Controller__pressed
+	ORA	Controller__pressed + 1
+	IF_BIT	#JOYL_A | JOYL_X	; also the same as B and Y
+		;; ::TODO check if already opened::
+
+		BRA	EnterState_WaitForDoors
+	ENDIF
+
+	RTS
+
+
+; DB = $7E
+.A8
+.I16
+ROUTINE EnterState_WaitForDoors
+	LDX	#GameState::WAIT_FOR_DOORS
+	STX	state
+
+	LDA	cursorPos
+	STA	secondSelectedPos
+
+	STZ	secondDoorValue
+
+	RTS
+
+
+; DB = $7E
+.A8
+.I16
+ROUTINE State_WaitForDoors
+
+	DEC	animationCounter
+	IF_ZERO
+		; Animation of second door
+		INC	secondDoorValue
+
+		LDA	secondDoorValue
+		CMP	#N_DOOR_FRAMES + 1
+		IF_GE
+			BRA	CheckMatch
+		ENDIF
+
+		LDX	secondSelectedPos
+		JSR	GameGrid__DrawDoor
+
+		; Continue animation of second door if necessary
+		LDA	firstDoorValue
+		CMP	#N_DOOR_FRAMES
+		IF_LT
+			INC
+			STA	firstDoorValue
+
+			LDX	firstSelectedPos
+			JSR	GameGrid__DrawDoor
+
+			LDA	#OPEN_DOOR_ANIMATION_DELAY
+			STA	animationCounter
+		ENDIF
+
+		LDA	#OPEN_DOOR_ANIMATION_DELAY
+		STA	animationCounter
+	ENDIF
+
+	RTS
+
+
+
+;; Checks that the two cards are equal and move to correct state
+.A8
+.I16
+ROUTINE CheckMatch
+	; ::TODO code::
+	REPEAT
+	FOREVER
+
+
+
+;; move the cursor depending on the controller
+.A8
+.I16
+ROUTINE HandleCursor
+	LDA	Controller__pressed + 1
+	IF_BIT	#JOYH_UP
+		LDA	cursorPos
+		SUB	#GAMEGRID_WIDTH
+
+		IF_MINUS
+			ADD	#GAMEGRID_HEIGHT * GAMEGRID_WIDTH
+		ENDIF
+		STA	cursorPos
+
+	ELSE_BIT #JOYH_DOWN
+		LDA	cursorPos
+		ADD	#GAMEGRID_WIDTH
+
+		CMP	#GAMEGRID_HEIGHT * GAMEGRID_WIDTH
+		IF_GE
+			SUB	#GAMEGRID_HEIGHT * GAMEGRID_WIDTH
+		ENDIF
+		STA	cursorPos
+	ENDIF
+
+	LDA	Controller__pressed + 1
+	IF_BIT	#JOYH_LEFT
+		DEC	cursorPos
+		IF_MINUS
+			LDA	#GAMEGRID_HEIGHT * GAMEGRID_WIDTH -1
+			STA	cursorPos
+		ENDIF
+
+	ELSE_BIT #JOYH_RIGHT
+		INC	cursorPos
+
+		LDA	cursorPos
+		CMP	#GAMEGRID_HEIGHT * GAMEGRID_WIDTH
+		IF_GE
+			STZ	cursorPos
+		ENDIF
+	ENDIF
+
+	LDA	cursorPos
+	JMP	Sprites__DrawCursor
 
 
 ;; Initialize the system
