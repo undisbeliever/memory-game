@@ -31,6 +31,10 @@ IMPORT_MODULE GameGrid
 	;; REQUIRES: 8 bit A, 16 bit Index, DB access registers
 	ROUTINE VBlank
 
+	;; Shuffles the cards, marks all cards as unopened
+	;; REQUIRES: 8 bit A, 16 bit Index, DB = anywhere
+	ROUTINE	ShuffleCards
+
 	;; Clears the tilemap
 	;; REQUIRES: 8 bit A, 16 bit Index, DB = anywhere
 	ROUTINE	ClearScreen

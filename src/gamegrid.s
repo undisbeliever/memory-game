@@ -9,6 +9,7 @@
 .include "routines/block.h"
 .include "routines/math.h"
 .include "routines/resourceloader.h"
+.include "routines/random.h"
 .include "routines/screen.h"
 .include "routines/reset-snes.h"
 
@@ -24,22 +25,23 @@ CARD_TILEMAP_HEIGHT	= 15
 	BYTE	updateCardMapOnZero
 	BYTE	updateDoorMapOnZero
 
+	; need to access with both registers when DB = $80
+	WORD	grid, GAMEGRID_WIDTH * GAMEGRID_HEIGHT
+
+	WORD	tmp1
+	WORD	tmp2
+	WORD	tmp3
+	WORD	tmp4
+
 .segment "WRAM7E"
 
 Init_MemClear:
 	WORD	cardTileMap, 32 * 24
 	WORD	doorTileMap, 32 * 24
 
-	WORD	grid, GAMEGRID_WIDTH * GAMEGRID_HEIGHT
-
 	;; If byte is non-zero then the card has been opened
 	BYTE	gridCardOpened, GAMEGRID_WIDTH * GAMEGRID_HEIGHT
 Init_MemClear_End:
-
-	WORD	tmp1
-	WORD	tmp2
-	WORD	tmp3
-	WORD	tmp4
 
 .code
 
@@ -109,7 +111,7 @@ ROUTINE Init
 	STZ	updateCardMapOnZero
 	STZ	updateDoorMapOnZero
 
-	; Setup cards
+	; Initial Setup of cards
 
 	LDX	#0
 	LDY	#N_CARDS_TO_MATCH
@@ -153,6 +155,57 @@ ROUTINE VBlank
 
 	RTS
 
+
+
+.A8
+.I16
+ROUTINE ShuffleCards
+
+	; Uses Fisher-Yates shuffle
+	; https://en.wikipedia.org/wiki/Fisher%E2%80%93Yates_shuffle
+
+tmp_i	 = tmp1
+
+	PHB
+	PHK
+	PLB
+
+	MemClear	Init_MemClear
+
+	LDY	#GAMEGRID_WIDTH * GAMEGRID_HEIGHT - 1
+	STY	tmp_i
+
+	REPEAT
+		LDY	tmp_i
+		JSR	Random__Rnd_U16Y
+
+		SEP	#$10
+.I8
+		TYA
+		ASL
+		TAY
+
+		LDA	tmp_i
+		ASL
+		TAX
+
+		LDA	grid, X
+		PHA
+
+		LDA	grid, Y
+		STA	grid, X
+
+		PLA
+		STA	grid, Y
+
+		REP	#$10
+.I16
+
+		DEC	tmp_i
+	UNTIL_ZERO
+
+	PLB
+	RTS
 
 
 .A8

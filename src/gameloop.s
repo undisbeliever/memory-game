@@ -8,6 +8,7 @@
 .include "routines/block.h"
 .include "routines/math.h"
 .include "routines/controller.h"
+.include "routines/random.h"
 .include "routines/resourceloader.h"
 .include "routines/screen.h"
 
@@ -88,8 +89,15 @@ ROUTINE PlayGame
 	STX	state
 
 	REPEAT
+		PEA	$7E80
+		PLB		; $80
+
+		JSR	Random__AddJoypadEntropy
 		JSR	Controller__UpdateRepeatingDPad
 
+		PLB		; $7E
+
+		LDX	state
 		JSR	(.loword(StateTable), X)
 		JSR	Screen__WaitFrame
 
@@ -128,7 +136,9 @@ ROUTINE	State_PressStart
 	IF_BIT	#JOYH_START
 		BRA	EnterState_OpenAllDoors
 	ENDIF
-	
+
+	JSR	GameGrid__ShuffleCards
+
 	RTS
 
 
@@ -140,8 +150,6 @@ ROUTINE	State_PressStart
 ROUTINE EnterState_OpenAllDoors
 	LDX	#GameState::OPEN_ALL_DOORS
 	STX	state
-
-	; ::TODO randomize cards
 
 	JSR	Sprites__Clear
 
