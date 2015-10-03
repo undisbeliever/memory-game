@@ -26,9 +26,9 @@ MODULE GameLoop
 .enum GameState
 	END		=  0
 	PRESS_START	=  2
-	OPEN_DOORS	=  4
+	OPEN_ALL_DOORS	=  4
 	SHOW_CARDS	=  6
-	CLOSE_DOORS	=  8
+	CLOSE_ALL_DOORS	=  8
 	SELECT_FIRST	= 10
 	SELECT_SECOND	= 12
 	WAIT_FOR_DOORS	= 14
@@ -105,9 +105,9 @@ ROUTINE PlayGame
 StateTable:
 	.addr	DoNothing
 	.addr	State_PressStart
-	.addr	State_OpenDoors
+	.addr	State_OpenAllDoors
 	.addr	State_ShowCards
-	.addr	State_CloseDoors
+	.addr	State_CloseAllDoors
 	.addr	State_SelectFirst
 	.addr	State_SelectSecond
 	.addr	State_WaitForDoors
@@ -126,7 +126,7 @@ ROUTINE DoNothing
 ROUTINE	State_PressStart
 	LDA	Controller__pressed + 1
 	IF_BIT	#JOYH_START
-		BRA	EnterState_OpenDoors
+		BRA	EnterState_OpenAllDoors
 	ENDIF
 	
 	RTS
@@ -137,8 +137,8 @@ ROUTINE	State_PressStart
 ; DB = $7E
 .A8
 .I16
-ROUTINE EnterState_OpenDoors
-	LDX	#GameState::OPEN_DOORS
+ROUTINE EnterState_OpenAllDoors
+	LDX	#GameState::OPEN_ALL_DOORS
 	STX	state
 
 	; ::TODO randomize cards
@@ -168,7 +168,7 @@ ROUTINE EnterState_OpenDoors
 ; DB = $7E
 .A8
 .I16
-ROUTINE State_OpenDoors
+ROUTINE State_OpenAllDoors
 
 	DEC	animationCounter
 	IF_ZERO
@@ -215,18 +215,18 @@ ROUTINE State_ShowCards
 
 	LDA	Controller__pressed
 	AND	#.lobyte(JOY_SKIP)
-	BNE	EnterState_CloseDoors
+	BNE	EnterState_CloseAllDoors
 
 	LDA	Controller__pressed + 1
 	AND	#.hibyte(JOY_SKIP)
-	BNE	EnterState_CloseDoors
+	BNE	EnterState_CloseAllDoors
 
 
 	LDY	animationCounter
 	DEY
 	STY	animationCounter
 
-	BEQ	EnterState_CloseDoors
+	BEQ	EnterState_CloseAllDoors
 
 	RTS
 
@@ -235,8 +235,8 @@ ROUTINE State_ShowCards
 ; DB = $7E
 .A8
 .I16
-ROUTINE EnterState_CloseDoors
-	LDX	#GameState::CLOSE_DOORS
+ROUTINE EnterState_CloseAllDoors
+	LDX	#GameState::CLOSE_ALL_DOORS
 	STX	state
 
 	LDA	#N_DOOR_FRAMES
@@ -252,7 +252,7 @@ ROUTINE EnterState_CloseDoors
 ; DB = $7E
 .A8
 .I16
-ROUTINE State_CloseDoors
+ROUTINE State_CloseAllDoors
 
 	DEC	animationCounter		
 	IF_ZERO
