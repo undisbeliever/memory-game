@@ -1,7 +1,5 @@
 ; Loader of resources.
 
-; :SHOULDDO automatically generate this with a program::
-
 .include "includes/import_export.inc"
 .include "includes/registers.inc"
 .include "includes/structure.inc"
