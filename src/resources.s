@@ -57,7 +57,7 @@ Sprites_4bpp:
 	.incbin "resources/tiles4bpp/sprites.4bpp"
 Sprites_4bpp_End:
 
-	INCLUDE_BINARY CardsTileMap, "resources/images4bpp/cards.map" 
+	INCLUDE_BINARY CardsTileMap, "resources/images4bpp/cards.map"
 
 
 .segment "BANK3"

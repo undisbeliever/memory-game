@@ -394,7 +394,7 @@ tmp_doorId	= tmp4
 
 
 	LDA	tmp_doorId
-	AND	#$00FF	
+	AND	#$00FF
 	ASL
 	ASL
 	ASL

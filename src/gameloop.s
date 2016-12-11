@@ -272,7 +272,7 @@ ROUTINE EnterState_CloseAllDoors
 .I16
 ROUTINE State_CloseAllDoors
 
-	DEC	animationCounter		
+	DEC	animationCounter
 	IF_ZERO
 		LDA	doorValue
 		JSR	GameGrid__DrawAllDoors
