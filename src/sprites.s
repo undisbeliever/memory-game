@@ -90,7 +90,7 @@ ROUTINE VBlank
 .A8
 .I16
 ROUTINE Clear
-	; Ourside screen
+	; Outside screen
 	LDA	#256 - 16
 	LDX	#oamBuffer_End - oamBuffer - .sizeof(OamFormat)
 

@@ -1,7 +1,7 @@
 Memory Game
 ===========
 
-Septembers's entry into the 1 Game Per Month Challenge.
+September's entry into the 1 Game Per Month Challenge.
 
 <img src="screenshot.png?raw=true" alt="Memory Game Screenshot" width="512" height="448">
 
