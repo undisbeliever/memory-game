@@ -224,7 +224,7 @@ ROUTINE _DrawMessage
 .A16
 	LDY	#.loword(textSprites)
 	LDA	#.sizeof(textSprites)
-	MVN	.bankbyte(textSprites), .bankbyte(PressStartCenterSprites)
+	MVN	#.bankbyte(PressStartCenterSprites), #.bankbyte(textSprites)
 
 	SEP	#$20
 .A8

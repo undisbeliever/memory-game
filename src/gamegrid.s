@@ -221,7 +221,7 @@ ROUTINE	ClearScreen
 	LDX	#.loword(grid)
 	LDY	#.loword(grid) + 2
 	LDA	#.sizeof(grid) - 2 - 1
-	MVN	.bankbyte(grid), .bankbyte(grid)
+	MVN	#.bankbyte(grid), #.bankbyte(grid)
 
 	SEP	#$20
 .A8
